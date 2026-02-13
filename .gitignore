@@ -1,0 +1,19 @@
+# Gradle / Android Studio
+.gradle/
+**/build/
+**/.cxx/
+**/.externalNativeBuild/
+/app/build/
+/build/
+*.apk
+*.aab
+
+
+# IntelliJ/AS
+.idea/
+*.iml
+.DS_Store
+
+# Local machine config
+local.properties
+/captures/
