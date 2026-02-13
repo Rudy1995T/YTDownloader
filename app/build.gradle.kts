@@ -68,7 +68,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // NewPipe Extractor - for YouTube stream extraction
-    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.24.5")
+    // Keep this updated! YouTube frequently changes their API
+    // v0.25.1+ fixes "page reload required" / bot detection errors
+    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.25.2")
 
     // FFmpeg - for audio conversion
     implementation(files("libs/mobile-ffmpeg-full-gpl-4.4.LTS.aar"))

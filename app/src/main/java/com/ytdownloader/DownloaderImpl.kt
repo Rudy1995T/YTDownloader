@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Implementation of NewPipe's Downloader interface using OkHttp
+ * With YouTube bot detection bypass
  */
 class DownloaderImpl private constructor() : Downloader() {
     
@@ -22,6 +23,13 @@ class DownloaderImpl private constructor() : Downloader() {
     
     companion object {
         private var instance: DownloaderImpl? = null
+        
+        // Rotate through several realistic user agents
+        private val USER_AGENTS = listOf(
+            "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36",
+            "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1"
+        )
         
         fun getInstance(): DownloaderImpl {
             if (instance == null) {
@@ -43,19 +51,32 @@ class DownloaderImpl private constructor() : Downloader() {
                 if (dataToSend != null) dataToSend.toRequestBody() else null
             )
         
-        // Add headers
+        // Add headers from request
         for ((key, values) in headers) {
             for (value in values) {
                 requestBuilder.addHeader(key, value)
             }
         }
         
-        // Add User-Agent if not present
+        // Add required headers if not present
         if (!headers.containsKey("User-Agent")) {
-            requestBuilder.addHeader(
-                "User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            )
+            requestBuilder.addHeader("User-Agent", USER_AGENTS.random())
+        }
+        
+        // Critical: Add YouTube consent cookie to bypass "Sign in to confirm you're not a bot"
+        if (url.contains("youtube.com") || url.contains("googlevideo.com")) {
+            if (!headers.containsKey("Cookie")) {
+                // SOCS cookie = consent given, PREF for preferences
+                requestBuilder.addHeader("Cookie", "SOCS=CAESEwgDEgk2MjcxMjE1NjQaAmVuIAEaBgiA_t6vBg; PREF=tz=UTC&f6=40000000")
+            }
+            // Additional headers that help avoid detection
+            requestBuilder.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+            requestBuilder.addHeader("Accept-Language", "en-US,en;q=0.5")
+            requestBuilder.addHeader("Sec-Fetch-Dest", "document")
+            requestBuilder.addHeader("Sec-Fetch-Mode", "navigate")
+            requestBuilder.addHeader("Sec-Fetch-Site", "none")
+            requestBuilder.addHeader("Sec-Fetch-User", "?1")
+            requestBuilder.addHeader("Upgrade-Insecure-Requests", "1")
         }
         
         val response = client.newCall(requestBuilder.build()).execute()
