@@ -4,10 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.services.youtube.YoutubeService
+import org.schabi.newpipe.extractor.localization.ContentCountry
+import org.schabi.newpipe.extractor.localization.Localization
 import org.schabi.newpipe.extractor.stream.StreamInfo
-import org.schabi.newpipe.extractor.stream.VideoStream
-import org.schabi.newpipe.extractor.stream.AudioStream
 
 data class VideoInfo(
     val title: String,
@@ -40,7 +39,16 @@ object YouTubeExtractor {
         ensureInitialized()
         
         val normalizedUrl = normalizeUrl(url)
-        val streamInfo = StreamInfo.getInfo(normalizedUrl)
+        
+        // Get the YouTube service with proper localization
+        val youtubeService = ServiceList.YouTube
+        
+        // Create extractor with localization to avoid geo-blocking issues
+        val extractor = youtubeService.getStreamExtractor(normalizedUrl)
+        extractor.fetchPage()
+        
+        // Build StreamInfo from the extractor
+        val streamInfo = StreamInfo.getInfo(youtubeService, normalizedUrl)
         
         val videoStreams = streamInfo.videoStreams
             .filter { it.isVideoOnly.not() }  // Get streams with audio
